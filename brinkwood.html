@@ -849,7 +849,7 @@
         <input class="inherit" type="text" spellcheck="false" name="attr_special_abilities_title" value="Special Abilities"/>
       </div>
       <div class="greyholder">
-        <fieldset class="repeating_ability">
+        <fieldset class="repeating_crewability">
           <div class="specialability flex">
             <button class="broadcast-button" type="roll" name="roll_Show" value="&amp;{template:bitd-broadcast} {{charname=@{character_name}}} {{type=^{special_ability}}} {{title=@{name}}} {{content=@{description}}} {{charimage=@{chat_image}}}" data-i18n-title="send_details_to_chat">:</button>
             <input class="checkbox circlebox" type="checkbox" name="attr_check" value="1"/><span></span>
@@ -1077,11 +1077,14 @@
 		  base[attr] = getTranslationByKey(base[attr]);
         }
       });
-      maskData[mask].specialAbility = maskData[mask].special.map(name => ({
+      maskData[mask].crewability = maskData[mask].crewability.map(name => ({
         name: getTranslationByKey(`mask_${mask}_${name}`),
         description: getTranslationByKey(`mask_${mask}_${name}_desc`)
       }));
+	  console.log("maskData: " + maskData["lies"].crewability)
+	  
 	  console.log("Action Data")
+	  
 	  /*maskData[mask].action = maskData[mask].action.map(name => ({
         name: getTranslationByKey(`mask_${mask}_${name}`),
         description: getTranslationByKey(`mask_${mask}_${name}_desc`)
@@ -1185,7 +1188,7 @@
       return [x.name.toLowerCase(), x.description];
     }));
     const crewAbilityMap = new Map([
-      ...Object.values(maskData).map(x => x.specialAbility).reduce((m, v) => {
+      ...Object.values(maskData).map(x => x.crewability).reduce((m, v) => {
         v.forEach(a => m.add(a));
 		console.log("crewMap")
 		console.log(m)
@@ -1193,6 +1196,7 @@
       }, new Set())].map(x => {
 	  console.log("xname to lowerCase Start")
 	  console.log(x.name)
+	  console.log(x.description)
       return [x.name.toLowerCase(), x.description];
 	  console.log("xname to lowerCase End")
     }));
@@ -1224,12 +1228,18 @@
   }
   function fillRepeatingSectionFromData(
     sectionName, dataList, autogen, callback) {
+	console.log("fillRepeatingSectionFromData called")
+	console.log("sectionName: " + sectionName)
+	console.log("dataList: " + JSON.stringify(dataList))
+	console.log("autogen: " + autogen)
+	console.log("callback: " + callback)
     callback = callback || (() => {});
     getSectionIDs(`repeating_${sectionName}`, idList => {
       const existingRowAttributes = [
         ...idList.map(id => `repeating_${sectionName}_${id}_name`),
         ...idList.map(id => `repeating_${sectionName}_${id}_autogen`)
       ];
+	  console.log("existingRowAttributes: " + existingRowAttributes)
       getAttrs(existingRowAttributes, v => {
         /* Delete auto-generated rows */
         if (autogen) {
@@ -1242,10 +1252,12 @@
         }
         const existingRowNames = idList
           .map(id => v[`repeating_${sectionName}_${id}_name`]);
-        const createdIDs = [];
+        console.log("existingRowNames: " + existingRowNames)
+		const createdIDs = [];
         const setting = dataList.filter(o => !existingRowNames.includes(o.name))
           .map(o => {
-            let rowID;
+            console.log("creating setting")
+			let rowID;
             while (!rowID) {
               let newID = generateRowID();
               if (!createdIDs.includes(newID)) {
@@ -1255,15 +1267,20 @@
             }
             const newAttrs = {};
             if (autogen) {
-              newAttrs[`repeating_${sectionName}_${rowID}_autogen`] = "1";
+              console.log("autogen true")
+			  newAttrs[`repeating_${sectionName}_${rowID}_autogen`] = "1";
             }
+			console.log("returning Object.keys")
             return Object.keys(o).reduce((m, key) => {
               m[`repeating_${sectionName}_${rowID}_${key}`] = o[key];
-              return m;
+              console.log("m: " + m)
+			  return m;
             }, newAttrs);
           })
           .reduce((m, o) => Object.assign(m, o), {});
-        mySetAttrs(setting, {}, callback);
+		console.log("createdIDs: " + createdIDs)
+        console.log("setting: " + JSON.stringify(setting))
+		mySetAttrs(setting, {}, callback);
       });
     });
   }
@@ -1441,6 +1458,7 @@
         }
       };
       if (event.sourceAttribute === "crew_type" ? v.crew_type : v.playbook) {
+	    console.log("Crew Type Playbook event")
         setAttr("show_playbook_reminder", "0");
       }
       if (v.setting_autofill !== "1") return;
@@ -1456,7 +1474,8 @@
         fillBaseData(maskData[sourceName].base, crewAttributes);
       }
       if (event.sourceAttribute === "playbook" && sourceName in playbookData) {
-        fillRepeatingSectionFromData("friend",
+        console.log("Playbook event")
+		fillRepeatingSectionFromData("friend",
           playbookData[sourceName].friend, true);
         fillRepeatingSectionFromData("ability",
           playbookData[sourceName].ability, true);
@@ -1470,7 +1489,8 @@
     });
   }
   function fillAbility(prefix, abilityMap) {
-    getAttrs([`${prefix}_name`, `${prefix}_description`], v => {
+    console.log("Start fillAbility function")
+	getAttrs([`${prefix}_name`, `${prefix}_description`], v => {
       if (!v[`${prefix}_description`]) {
         console.log("abilityMap to Lower Case")
 		const description = abilityMap.get((v[`${prefix}_name`] || "")
@@ -1517,17 +1537,27 @@
   }
   function handleRepeatingGenerateButton(sectionName) {
     on(`change:generate_${sectionName}`, () => {
-      getAttrs([
+      console.log("handleRepeatingGenerateButton called")
+	  getAttrs([
         "generate_source_character",
         "generate_source_crew",
         "sheet_type"
       ], v => {
         const data = (v.sheet_type === "character") ? playbookData : maskData,
           genSource = v[`generate_source_${v.sheet_type}`];
+		  console.log("data: " + JSON.stringify(data))
+		  console.log("maskData: " + JSON.stringify(maskData))
         if (genSource in data) {
-          emptyFirstRowIfUnnamed(sectionName);
+          console.log("genSource in data")
+		  console.log("sectionName: " + sectionName)
+		  emptyFirstRowIfUnnamed(sectionName);
+		  console.log("emptyFirstRowIfUnnamed finished")
           fillRepeatingSectionFromData(sectionName,
             data[genSource][sectionName]);
+		  console.log("fillRepeatingSectionFromData finished")
+		  console.log("genSource: " + genSource)
+		  console.log("data: " + data[genSource][sectionName])
+		  console.log("data: " + data[genSource])
         }
       });
     });
@@ -1577,7 +1607,9 @@
           "framefeature"
         ].reduce((memo, sectionName) => {
           memo[`repeating_${sectionName}_${generateRowID()}_autogen`] = 1;
-          return memo;
+          console.log("initialiseSheet running")
+		  console.log(memo)
+		  return memo;
         }, {});
         addVersion(setting, sheetVersion);
         /* Set translated default values */
@@ -1681,7 +1713,8 @@
     });
   }
   function updateChangedAttrs(event) {
-    if (event.sourceType === "player") {
+    console.log("updateChangedAttrs called")
+	if (event.sourceType === "player") {
       getAttrs(["changed_attributes"], v => {
         const changedAttributes = [
           ...new Set(v.changed_attributes.split(","))
@@ -1692,7 +1725,8 @@
     }
   }
   function watchAutogen(sectionName) {
-    on(`change:repeating_${sectionName}`, event => {
+    console.log("watchAutogen called")
+	on(`change:repeating_${sectionName}`, event => {
       getAttrs([`repeating_${sectionName}_autogen`], v => {
         if (v[`repeating_${sectionName}_autogen`] &&
           event.sourceType === "player") {
@@ -1702,7 +1736,8 @@
     });
   }
   function handleDarkTalentChange(attribute) {
-    getAttrs([
+    console.log("handleDarkTalentChange called")
+	getAttrs([
       `setting_dark_talent_${attribute}`,
       `setting_resbonus_${attribute}`
     ], v => {
@@ -2148,8 +2183,8 @@
   };
   const maskData = {
     lies: {
-      ability: ["deceive", "hide", "reveal", "educate"],
-      special: ["manyfaces", "simpletruths", "honeyedwords", "unseenunheard", "tastetruths", "twistthelie", "cloakrumors"],
+      action: ["deceive", "hide", "reveal", "educate"],
+      crewability: ["manyfaces", "simpletruths", "honeyedwords", "unseenunheard", "tastetruths", "twistthelie", "cloakrumors"],
       base: {
         mask_name: "mask_lies",
         mask_desc: "mask_lies_desc",
@@ -2158,7 +2193,7 @@
     },
     ruin: {
       ability: ["corrupt", "crack", "quarry", "spoil"],
-      special: ["alchemicblood", "envenom", "aslowpoison", "transfusion", "cruelend", "bulwark", "oldstone"],
+      crewability: ["alchemicblood", "envenom", "aslowpoison", "transfusion", "cruelend", "bulwark", "oldstone"],
       base: {
         mask_name: "mask_ruin",
         mask_desc: "mask_ruin_desc",
@@ -2167,7 +2202,7 @@
     },
     terror: {
       ability: ["frighten", "awe", "disarm", "flash"],
-      special: ["nolords", "fearyourslaves", "sowdiscord", "noexcuses", "shockawe", "primalterror", "silencedfears"],
+      crewability: ["nolords", "fearyourslaves", "sowdiscord", "noexcuses", "shockawe", "primalterror", "silencedfears"],
       base: {
         mask_name: "mask_terror",
         mask_desc: "mask_terror_desc",
@@ -2176,7 +2211,7 @@
     },
     violence: {
       ability: ["slaughter", "carnage", "direct", "cover"],
-      special: ["taunt", "threaten", "wholesalecarnage", "fleshmend", "leadfromthefront", "bloodtaker", "seered"],
+      crewability: ["taunt", "threaten", "wholesalecarnage", "fleshmend", "leadfromthefront", "bloodtaker", "seered"],
       base: {
         mask_name: "mask_violence",
         mask_desc: "mask_violence_desc",
@@ -2185,7 +2220,7 @@
     },
     riot: {
       ability: ["rouse", "burn", "explode", "provoke"],
-      special: ["languageunheard", "commonstruggle", "friendscomrads", "fieryrhetoric", "torchespitchforks", "singlespark", "righterwrongs"],
+      crewability: ["languageunheard", "commonstruggle", "friendscomrads", "fieryrhetoric", "torchespitchforks", "singlespark", "righterwrongs"],
       base: {
         mask_name: "mask_riot",
         mask_desc: "mask_riot_desc",
@@ -2194,7 +2229,7 @@
     },
     torment: {
       ability: ["drain", "vivisect", "suture", "tend"],
-      special: ["lure", "astitchintime", "tormentinglaughter", "sufferinsilence", "expertvivisection", "thousandneedles", "sharedpain"],
+      crewability: ["lure", "astitchintime", "tormentinglaughter", "sufferinsilence", "expertvivisection", "thousandneedles", "sharedpain"],
       base: {
         mask_name: "mask_torment",
         mask_desc: "mask_torment_desc",
@@ -2203,7 +2238,7 @@
     },
     judgment: {
       ability: ["snipe", "scout", "read", "slip"],
-      special: ["executioner", "reviewevidence", "peoplesrazor", "carefulaim", "pronouncesentence", "swiftjustice", "readroom"],
+      crewability: ["executioner", "reviewevidence", "peoplesrazor", "carefulaim", "pronouncesentence", "swiftjustice", "readroom"],
       base: {
         mask_name: "mask_judgment",
         mask_desc: "mask_judgment_desc",
@@ -3536,9 +3571,9 @@
   on("change:crew_type change:playbook", handlePlaybookFill);
   /* automatically fill abilities */
   on("change:repeating_ability:name",
-    () => fillAbility("repeating_ability", playbookAbilityMap));
+	() => fillAbility("repeating_ability", playbookAbilityMap)); 
   on("change:repeating_crewability:name",
-    () => fillAbility("repeating_crewability", crewAbilityMap));
+	() => fillAbility("repeating_crewability", crewAbilityMap)); 
   /* Watch repeating rows for changes and set autogen to false if it changes */
   autogenSections.forEach(watchAutogen);
   /* Watch for changes in auto-set attributes and update changed_attributes */
