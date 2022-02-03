@@ -220,7 +220,7 @@
     "mask_terror_awe_desc": "When you Awe, you create a spectacle of wonder.",
     "mask_terror_disarm": "Disarm",
     "mask_terror_disarm_desc": "When you Disarm, you remove an enemy’s ability to do harm.",
-    "mask_terror_explode": "Explode",
+    "mask_terror_flash": "Explode",
     "mask_terror_flash_desc": "When you Explode, you use your emotions or literal explosive devices to make things go boom.",
     "mask_terror_nolords": "No Lords, No Masters",
     "mask_terror_nolords_desc": "Gain +Effect when either soothing the souls of the oppressed or inspiring them to action.",
@@ -1479,5 +1479,13 @@
     "with": "with",
     "workshop": "Workshop",
     "zerodice": "Zero Dice — take the lowest result above",
-    "zindiq": "Zindiq"
+    "lies": "Lies",
+	"ruin": "Ruin",
+	"terror": "Terror",
+	"violence": "Violence",
+	"riot": "Riot",
+	"torment": "Torment",
+	"judgment": "Judgment"
+	
+	
 }
