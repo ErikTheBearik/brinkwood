@@ -1062,26 +1062,33 @@
   "use strict";
   /* FUNCTIONS */
   function dataSetup() {
-    Object.keys(crewData).forEach(crew => {
-      const base = crewData[crew].base,
+    Object.keys(maskData).forEach(mask => {
+      const base = maskData[mask].base,
         translatedBaseAttributes = [
-          ...[...Array(16).keys()].slice(1).map(i => `claim_${i}_name`),
-          ...[...Array(16).keys()].slice(1).map(i => `claim_${i}_desc`),
-          "cohort1_description",
-          "cohort1_name",
-          "cohort1_subtype",
-          "crew_description",
-          "crew_xp_condition",
-          "hunting_grounds_type",
-          "hunting_grounds_description",
-          "upgrade_carriage_name",
-          "upgrade_boat_name"
+          "mask_name",
+          "mask_description",
+          "maskxp_blurb3"
         ];
       Object.keys(base).forEach(attr => {
         if (translatedBaseAttributes.includes(attr)) {
-          base[attr] = getTranslationByKey(base[attr]);
+          console.log("Key Bases")
+		  console.log(base[attr])
+
+		  base[attr] = getTranslationByKey(base[attr]);
         }
       });
+      maskData[mask].specialAbility = maskData[mask].special.map(name => ({
+        name: getTranslationByKey(`mask_${mask}_${name}`),
+        description: getTranslationByKey(`mask_${mask}_${name}_desc`)
+      }));
+	  console.log("Action Data")
+	  /*maskData[mask].action = maskData[mask].action.map(name => ({
+        name: getTranslationByKey(`mask_${mask}_${name}`),
+        description: getTranslationByKey(`mask_${mask}_${name}_desc`)
+      }));
+	  console.log("Action Data End")
+	  */
+	  /* Old Crew Data
       crewData[crew].contact = [...Array(6).keys()].map(i => ({
         name: getTranslationByKey(`crew_${crew}_contact_${i}`)
       }));
@@ -1093,26 +1100,34 @@
         upgrade.name = getTranslationByKey(upgrade.name);
         upgrade.boxes_chosen = "1";
       });
+	  */
     });
+	console.log("Item Data Start")
     itemData.forEach(item => {
       item.boxes_chosen = "1";
+	  console.log(item.name)
       item.name = getTranslationByKey(item.name);
+	  console.log(item.description)
       item.description = getTranslationByKey(item.description);
     });
+	console.log("Item Name Desc Data")
     Object.keys(translatedDefaults).forEach(k => {
       translatedDefaults[k] = getTranslationByKey(translatedDefaults[k]);
     });
+	console.log("translated Defaults")
     Object.assign(defaultValues, translatedDefaults);
     Object.keys(factionsData).forEach(x => {
       factionsData[x].forEach(faction => {
         faction.name = getTranslationByKey(faction.name);
       });
     });
+	console.log("Faction Data")
     alchemicalData.forEach((v, k) => {
       alchemicalData[k] = {
         name: getTranslationByKey(v)
       };
     });
+	console.log("Alchemical Data")
     Object.keys(playbookData).forEach(playbook => {
       const base = playbookData[playbook].base,
         translatedBaseAttributes = [
@@ -1138,6 +1153,7 @@
           base[attr] = getTranslationByKey(base[attr]);
         }
       });
+	  console.log("Playbook Key Data")
       if (!["ghost", "hull"].includes(playbook)) {
         playbookData[playbook].friend = [...Array(5).keys()]
           .map(i => ({
@@ -1162,21 +1178,31 @@
     const playbookAbilityMap = new Map([
       ...Object.values(playbookData).map(x => x.ability).reduce((m, v) => {
         v.forEach(a => m.add(a));
+		console.log("crewMap return M")
         return m;
       }, new Set())].map(x => {
+	  console.log("crewMapLowerCase")
       return [x.name.toLowerCase(), x.description];
     }));
     const crewAbilityMap = new Map([
-      ...Object.values(crewData).map(x => x.crewability).reduce((m, v) => {
+      ...Object.values(maskData).map(x => x.specialAbility).reduce((m, v) => {
         v.forEach(a => m.add(a));
+		console.log("crewMap")
+		console.log(m)
         return m;
       }, new Set())].map(x => {
+	  console.log("xname to lowerCase Start")
+	  console.log(x.name)
       return [x.name.toLowerCase(), x.description];
+	  console.log("xname to lowerCase End")
     }));
     [
       crewData, playbookData, factionsData, actionData, traumaData, itemData,
       translatedDefaults, defaultValues, spiritPlaybooks, alchemicalData,
     ].forEach(x => Object.freeze(x));
+	<!-- Debug -->
+	console.log("Returning crewAbilityMap");
+	console.log(crewAbilityMap);
     return [playbookAbilityMap, crewAbilityMap];
   }
   function mySetAttrs(attrs, options, callback) {
@@ -1391,6 +1417,7 @@
       ...watchedAttributes
     ], v => {
       const changedAttributes = (v.changed_attributes || "").split(",");
+	  console.log("translatedNames")
       const sourceName = translatedNames[
         (event.sourceAttribute === "crew_type" ? v.crew_type : v.playbook)
           .toLowerCase()];
@@ -1417,14 +1444,16 @@
         setAttr("show_playbook_reminder", "0");
       }
       if (v.setting_autofill !== "1") return;
-      if (event.sourceAttribute === "crew_type" && sourceName in crewData) {
-        fillRepeatingSectionFromData("contact",
-          crewData[sourceName].contact, true);
+      if (event.sourceAttribute === "crew_type" && sourceName in maskData) {
+        /*fillRepeatingSectionFromData("contact",
+          crewData[sourceName].contact, true); */
+		console.log("Printing mask ability...")
+		console.log(maskData[sourceName].ability)
         fillRepeatingSectionFromData("crewability",
-          crewData[sourceName].crewability, true);
-        fillRepeatingSectionFromData("upgrade",
-          crewData[sourceName].upgrade, true);
-        fillBaseData(crewData[sourceName].base, crewAttributes);
+          maskData[sourceName].ability, true);
+        /*fillRepeatingSectionFromData("upgrade",
+          crewData[sourceName].upgrade, true); */
+        fillBaseData(maskData[sourceName].base, crewAttributes);
       }
       if (event.sourceAttribute === "playbook" && sourceName in playbookData) {
         fillRepeatingSectionFromData("friend",
@@ -1443,7 +1472,8 @@
   function fillAbility(prefix, abilityMap) {
     getAttrs([`${prefix}_name`, `${prefix}_description`], v => {
       if (!v[`${prefix}_description`]) {
-        const description = abilityMap.get((v[`${prefix}_name`] || "")
+        console.log("abilityMap to Lower Case")
+		const description = abilityMap.get((v[`${prefix}_name`] || "")
           .toLowerCase());
         if (description) setAttr(`${prefix}_description`, description);
       }
@@ -1492,7 +1522,7 @@
         "generate_source_crew",
         "sheet_type"
       ], v => {
-        const data = (v.sheet_type === "character") ? playbookData : crewData,
+        const data = (v.sheet_type === "character") ? playbookData : maskData,
           genSource = v[`generate_source_${v.sheet_type}`];
         if (genSource in data) {
           emptyFirstRowIfUnnamed(sectionName);
@@ -2119,7 +2149,7 @@
   const maskData = {
     lies: {
       ability: ["deceive", "hide", "reveal", "educate"],
-      special: ["manyfaces", "simpletruths", "honeydwords", "unseenunheard", "tastetruths", "twistthelie", "cloakrumors"],
+      special: ["manyfaces", "simpletruths", "honeyedwords", "unseenunheard", "tastetruths", "twistthelie", "cloakrumors"],
       base: {
         mask_name: "mask_lies",
         mask_desc: "mask_lies_desc",
@@ -2164,7 +2194,7 @@
     },
     torment: {
       ability: ["drain", "vivisect", "suture", "tend"],
-      special: ["lure", "astitchintime", "tormentinglaughter", "sufferinsilence", "expertvivasection", "thousandneedles", "sharedpain"],
+      special: ["lure", "astitchintime", "tormentinglaughter", "sufferinsilence", "expertvivisection", "thousandneedles", "sharedpain"],
       base: {
         mask_name: "mask_torment",
         mask_desc: "mask_torment_desc",
@@ -3309,10 +3339,12 @@
     },
     {
       name: "i_ashwood",
+	  description: "i_ashwood_description",
       numboxes: "1"
     },
     {
       name: "i_black_powder",
+	  description: "i_black_powder_description",
       numboxes: "1"
     }
   ];
@@ -3439,7 +3471,7 @@
   /* PRE-COMPUTED CONSTANTS */
   const [playbookAbilityMap, crewAbilityMap] = dataSetup();
   const crewAttributes = [...new Set(
-    [].concat(...Object.keys(crewData).map(x => Object.keys(crewData[x].base)))
+    [].concat(...Object.keys(maskData).map(x => Object.keys(maskData[x].base)))
   )];
   const playbookAttributes = [...new Set(
     [].concat(...Object.keys(playbookData)
@@ -3489,10 +3521,13 @@
   ];
   const translatedNames = [
     ...Object.keys(playbookData),
-    ...Object.keys(crewData)
+    ...Object.keys(maskData)
   ].reduce((m, keyName) => {
     if (getTranslationByKey(keyName)) {
-      m[getTranslationByKey(keyName).toLowerCase()] = keyName;
+      console.log("Key Name toLowerCase")
+	  console.log(keyName)
+	  console.log(m)
+	  m[getTranslationByKey(keyName).toLowerCase()] = keyName;
     }
     return m;
   }, {});
